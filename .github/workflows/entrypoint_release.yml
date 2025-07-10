@@ -26,7 +26,7 @@ jobs:
         uses: pdm-project/setup-pdm@v4
         with:
           python-version: "3.12"
-      - name: Build Exegol
+      - name: Build Mandalore
         run: pdm build
       - name: Publish distribution 📦 to Test PyPI
         run: pdm publish --no-build --repository https://test.pypi.org/legacy/ --skip-existing

@@ -3,9 +3,9 @@ requires = ["pdm-backend"]
 build-backend = "pdm.backend"
 
 [project]
-name = "Exegol"
+name = "Mandalore"
 dynamic = ["version"]
-description = "Python wrapper to use Exegol, a container based fully featured and community-driven hacking environment."
+description = "Python wrapper to use Mandalore, a container based fully featured and community-driven hacking environment."
 authors = [
     { name = "Dramelac", email = "dramelac@pm.me" },
     { name = "Shutdown", email = "nwodtuhs@pm.me" },
@@ -40,7 +40,7 @@ dev = ["pre-commit"]
 testing = ["mypy", "types-PyYAML", "types-requests", "types-tzlocal", "pytest"]
 
 [project.scripts]
-exegol = "exegol.manager.ExegolController:main"
+mandalore = "mandalore.manager.MandaloreController:main"
 
 [project.urls]
 Homepage = "https://github.com/ghecko/mandalore/wiki"
@@ -51,7 +51,7 @@ Issues = "https://github.com/ghecko/mandalore/issues"
 [tool.pdm]
 [tool.pdm.version]
 source = "file"
-path = "exegol/config/ConstantConfig.py"
+path = "mandalore/config/ConstantConfig.py"
 
 [tool.pdm.build]
 excludes = ["tests"]

@@ -1,4 +1,4 @@
-from tests.test_exegol import test_version
+from tests.test_mandalore import test_version
 
 # Run with python3 setup.py test
 

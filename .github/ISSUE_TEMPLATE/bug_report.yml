@@ -1,5 +1,5 @@
 name: 🐞 Bug report [WRAPPER]
-description: Report a bug in Exegol WRAPPER to help us improve it
+description: Report a bug in Mandalore WRAPPER to help us improve it
 title: "<title>"
 labels:
   - bug
@@ -9,10 +9,10 @@ body:
       value: |
         Verification before publication:
 
-        - You are creating a bug report in the Exegol **WRAPPER** repository (the exegol command)!
-        > If your problem concerns the environment, tools or other elements specific to the Exegol **IMAGE**, please open your issue on the [Exegol-images](https://github.com/ThePorgs/Exegol-images) repository.
+        - You are creating a bug report in the Mandalore **WRAPPER** repository (the mandalore command)!
+        > If your problem concerns the environment, tools or other elements specific to the Mandalore **IMAGE**, please open your issue on the [Mandalore-images](https://github.com/ghecko/mandalore-images) repository.
         - Check that there is not already a issue for the **same** problem.
-        - Some problems are already well known and can be found in the **documentation** or on the Exegol **Discord**.
+        - Some problems are already well known and can be found in the **documentation**.
   - type: textarea
     attributes:
       label: Describe the bug
@@ -28,16 +28,16 @@ body:
       description: Steps to reproduce the behavior.
       placeholder: |
         1. Use a specific configuration (if applicable) '...'
-        2. Run Exegol command `exegol ...`
+        2. Run Mandalore command `mandalore ...`
         3. Interactive choice (if applicable) '....'
         4. Error message
     validations:
       required: false
   - type: textarea
     attributes:
-      label: Exegol Wrapper Version
+      label: Mandalore Wrapper Version
       description: |
-        Paste output of `exegol version -vvv`.
+        Paste output of `mandalore version -vvv`.
       placeholder: |
         Paste your output here or a screenshot.
       render: Text
@@ -58,7 +58,7 @@ body:
     attributes:
       label: Configuration of the concerned container
       description: |
-        Paste output of `exegol info -v <container_name>` (if applicable).
+        Paste output of `mandalore info -v <container_name>` (if applicable).
       placeholder: |
         Paste your output here or a screenshot.
       render: Text
@@ -68,7 +68,7 @@ body:
     attributes:
       label: Execution logs in debug mode
       description: |
-        Run your exegol command in debug mod with the parameter `-vvv` and copy/paste the full output:
+        Run your mandalore command in debug mod with the parameter `-vvv` and copy/paste the full output:
       placeholder: |
         Paste your execution logs here
       render: Text

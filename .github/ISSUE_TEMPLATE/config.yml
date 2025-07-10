@@ -1,14 +1,14 @@
 blank_issues_enabled: false
 contact_links:
-  - name: Read the Exegol documentation
+  - name: Read the Mandalore documentation
     url: https://github.com/ghecko/mandalore/wiki
     about: 'An answer to your question may already be available in the documentation!'
-  - name: Create an issue regarding the Exegol [IMAGE] project
+  - name: Create an issue regarding the Mandalore [IMAGE] project
     url: https://github.com/ghecko/mandalore-images/issues
-    about: 'For the creation of issue related to the Exegol IMAGE project.'
-  - name: Create an issue regarding the Exegol [RESOURCES] project
+    about: 'For the creation of issue related to the Mandalore IMAGE project.'
+  - name: Create an issue regarding the Mandalore [RESOURCES] project
     url: https://github.com/ghecko/mandalore-resources/issues
-    about: 'For the creation of issue related to the Exegol RESOURCES project.'
-  - name: Create an issue regarding the Exegol [DOCS] project
+    about: 'For the creation of issue related to the Mandalore RESOURCES project.'
+  - name: Create an issue regarding the Mandalore [DOCS] project
     url: https://github.com/ghecko/mandalore-docs/issues
-    about: 'For the creation of issue related to the Exegol DOCS project.'
+    about: 'For the creation of issue related to the Mandalore DOCS project.'
