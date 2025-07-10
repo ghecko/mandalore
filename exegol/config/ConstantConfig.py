@@ -9,16 +9,16 @@ class ConstantConfig:
     version: str = __version__
 
     # Exegol documentation link
-    documentation: str = "https://exegol.rtfd.io/"
+    documentation: str = "https://github.com/ghecko/mandalore-docs/wiki"
     discord: str = "https://discord.gg/cXThyp7D6P"
     # OS Dir full root path of exegol project
     src_root_path_obj: Path = Path(__file__).parent.parent.parent.resolve()
     # Path of the entrypoint.sh
-    entrypoint_context_path_obj: Path = src_root_path_obj / "exegol/utils/imgsync/entrypoint.sh"
+    entrypoint_context_path_obj: Path = src_root_path_obj / "mandalore/utils/imgsync/entrypoint.sh"
     # Path of the spawn.sh
-    spawn_context_path_obj: Path = src_root_path_obj / "exegol/utils/imgsync/spawn.sh"
+    spawn_context_path_obj: Path = src_root_path_obj / "mandalore/utils/imgsync/spawn.sh"
     # Exegol config directory
-    exegol_config_path: Path = Path().home() / ".exegol"
+    exegol_config_path: Path = Path().home() / ".mandalore"
     # Docker Desktop for mac config file
     docker_desktop_mac_config_path = Path().home() / "Library/Group Containers/group.com.docker"
     docker_desktop_windows_config_short_path = "AppData/Roaming/Docker"
@@ -30,9 +30,9 @@ class ConstantConfig:
     # Dockerhub Exegol images repository
     DOCKER_HUB: str = "hub.docker.com"  # Don't handle docker login operations
     DOCKER_REGISTRY: str = "registry-1.docker.io"  # Don't handle docker login operations
-    IMAGE_NAME: str = "nwodtuhs/exegol"
-    GITHUB_REPO: str = "ThePorgs/Exegol"
+    IMAGE_NAME: str = "lksec/mandalore"
+    GITHUB_REPO: str = "lksec/mandalore"
     # Docker volume names (no docker volume used at this moment)
     # Resources repository
-    EXEGOL_IMAGES_REPO: str = "https://github.com/ThePorgs/Exegol-images.git"
-    EXEGOL_RESOURCES_REPO: str = "https://github.com/ThePorgs/Exegol-resources.git"
+    EXEGOL_IMAGES_REPO: str = "https://github.com/ghecko/mandalore-images.git"
+    EXEGOL_RESOURCES_REPO: str = "https://github.com/ghecko/mandalore-resources.git"

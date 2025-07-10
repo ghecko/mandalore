@@ -22,7 +22,7 @@ classifiers = [
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Operating System :: OS Independent",
 ]
-keywords = ["pentest", "redteam", "ctf", "exegol"]
+keywords = ["pentest", "redteam", "ctf", "mandalore"]
 
 requires-python = ">=3.9"
 dependencies = [
@@ -43,11 +43,10 @@ testing = ["mypy", "types-PyYAML", "types-requests", "types-tzlocal", "pytest"]
 exegol = "exegol.manager.ExegolController:main"
 
 [project.urls]
-Homepage = "https://exegol.readthedocs.io/"
-Documentation = "https://exegol.readthedocs.io/"
-Repository = "https://github.com/ThePorgs/Exegol"
-Issues = "https://github.com/ThePorgs/Exegol/issues"
-Funding = "https://patreon.com/nwodtuhs"
+Homepage = "https://github.com/ghecko/mandalore/wiki"
+Documentation = "https://github.com/ghecko/mandalore/wiki"
+Repository = "https://github.com/ghecko/mandalore.git"
+Issues = "https://github.com/ghecko/mandalore/issues"
 
 [tool.pdm]
 [tool.pdm.version]

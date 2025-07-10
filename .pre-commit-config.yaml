@@ -6,7 +6,7 @@ repos:
     rev: v5.0.0
     hooks:
       - id: trailing-whitespace
-        exclude: 'exegol/config/UserConfig.py'
+        exclude: 'mandalore/config/UserConfig.py'
       - id: end-of-file-fixer
       - id: check-yaml
       - id: check-toml
@@ -35,7 +35,7 @@ repos:
       - id: mypy
         stages: [pre-push]
         additional_dependencies: ["types-PyYAML", "types-requests", "types-tzlocal"]
-        exclude: "exegol.py"
+        exclude: "mandalore.py"
         args:
           - --ignore-missing-imports
           - --check-untyped-defs

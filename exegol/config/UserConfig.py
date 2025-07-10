@@ -36,7 +36,7 @@ class UserConfig(DataFileUtils, metaclass=MetaSingleton):
 
     def _build_file_content(self) -> str:
         config = f"""# Exegol configuration
-# Full documentation: https://exegol.readthedocs.io/en/latest/exegol-wrapper/advanced-uses.html#id1
+# Full documentation: https://github.com/ghecko/mandalore-docs/wiki
 
 # Volume path can be changed at any time but existing containers will not be affected by the update
 volumes:

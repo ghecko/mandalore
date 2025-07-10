@@ -59,7 +59,7 @@ class Parser:
                 action.__doc__ = "Unknown action"
             sub_parser = self.subParser.add_parser(action.name, help=action.__doc__,
                                                    description=action.__doc__ + f"""\n
-[bold magenta]Exegol documentation:[/bold magenta] [underline magenta]https://exegol.rtfd.io/en/latest/exegol-wrapper/{action.name}.html[/underline magenta]""",
+[bold magenta]Exegol documentation:[/bold magenta] [underline magenta]https://github.com/ghecko/mandalore[/underline magenta]""",
                                                    epilog=action.formatEpilog(),
                                                    formatter_class=self.__formatter_class)
             sub_parser.set_defaults(action=action)
