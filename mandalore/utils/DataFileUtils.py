@@ -73,7 +73,7 @@ class DataFileUtils:
         :return:
         """
         try:
-            with open(self._file_path, 'w') as file:
+            with open(self._file_path, 'w', encoding='utf-8') as file:
                 file.write(self._build_file_content())
             if sys.platform == "linux" and os.getuid() == 0:
                 user_uid, user_gid = get_user_id()
@@ -85,7 +85,7 @@ class DataFileUtils:
 
     def _parse_config(self) -> None:
         data: Dict = {}
-        with open(self._file_path, 'r') as file:
+        with open(self._file_path, 'r', encoding='utf-8') as file:
             try:
                 if self.__file_type == "yml":
                     data = yaml.safe_load(file)

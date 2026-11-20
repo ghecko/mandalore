@@ -121,6 +121,9 @@ class GitUtils:
         if optimize_disk_space:
             custom_options.append('--depth=1')
         from git import GitCommandError
+        from git.util import CallableRemoteProgress
+        # Keep a reference to the progress handler: git error messages are collected there (not in the exception stderr)
+        progress_handler = CallableRemoteProgress(clone_update_progress)
         try:
             with MetaGitProgress(TextColumn("{task.description}", justify="left"),
                                  BarColumn(bar_width=None),
@@ -128,13 +131,19 @@ class GitUtils:
                                  "[progress.percentage]{task.percentage:>3.1f}%",
                                  "[bold]{task.completed}/{task.total}[/bold]") as progress:
                 progress.add_task(f"[bold red]Cloning {self.getName()} git repository", start=True)
-                self.__gitRepo = Repo.clone_from(repo_url, str(self.__repo_path), multi_options=custom_options, progress=clone_update_progress)
+                # Never let git prompt for credentials (the prompt would be hidden by the progress bar):
+                # private repositories require a configured git credential helper or SSH access
+                clone_env = dict(os.environ, GIT_TERMINAL_PROMPT="0")
+                self.__gitRepo = Repo.clone_from(repo_url, str(self.__repo_path), multi_options=custom_options, progress=progress_handler, env=clone_env)  # type: ignore[arg-type]  # RemoteProgress instances are accepted at runtime
                 progress.remove_task(progress.tasks[0].id)
             logger.success(f"The Git repository {self.getName()} was successfully cloned!")
         except GitCommandError as e:
             # GitPython user \n only
-            error = GitUtils.formatStderr(e.stderr)
+            error = GitUtils.formatStderr(e.stderr) or " ".join(progress_handler.error_lines).strip()
             logger.error(f"Unable to clone the git repository. {error}")
+            if "terminal prompts disabled" in error or "could not read Username" in error:
+                logger.warning(f"The repository {repo_url} requires authentication: configure a git credential helper "
+                               f"(e.g. [green]gh auth setup-git[/green]) or clone it manually in {self.__repo_path}")
             return False
         self.__init_repo()
         return True
