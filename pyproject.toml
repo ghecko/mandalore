@@ -48,7 +48,7 @@ mandalore = "mandalore.manager.MandaloreController:main"
 
 [project.urls]
 Homepage = "https://github.com/ghecko/mandalore"
-Documentation = "https://github.com/ghecko/mandalore-docs"
+Documentation = "https://ghecko.github.io/mandalore-docs/"
 Repository = "https://github.com/ghecko/mandalore.git"
 Issues = "https://github.com/ghecko/mandalore/issues"
 

@@ -1,5 +1,5 @@
 # Contributors documentation
-Check the full contributors (up-to-date) documentation here: https://github.com/ghecko/mandalore-docs
+Check the full contributors (up-to-date) documentation here: https://ghecko.github.io/mandalore-docs/community/contributors.html
 
 # Wrapper & images
 - the `main` branch is the stable version. Changes are made in feature branches and merged through Pull Requests.

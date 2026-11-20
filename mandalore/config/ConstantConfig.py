@@ -43,7 +43,7 @@ class ConstantConfig:
     GITHUB_URL: str = f"https://github.com/{GITHUB_REPO}"
     ISSUES_URL: str = f"{GITHUB_URL}/issues"
     # Mandalore documentation link
-    documentation: str = f"https://github.com/{GITHUB_OWNER}/mandalore-docs"
+    documentation: str = f"https://{GITHUB_OWNER}.github.io/mandalore-docs/"
     # OS Dir full root path of mandalore project
     src_root_path_obj: Path = Path(__file__).parent.parent.parent.resolve()
     # Path of the entrypoint.sh

@@ -4,7 +4,7 @@
 
 # Getting started
 
-You can refer to the [Mandalore documentation](https://github.com/ghecko/mandalore-docs).
+You can refer to the [Mandalore documentation](https://ghecko.github.io/mandalore-docs/).
 
 ## Project structure
 
