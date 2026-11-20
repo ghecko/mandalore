@@ -1,19 +1,18 @@
 name: Ext. PR tests & int. branches pushes
 
 # for external contribution pull requests,
-#  and internal pushes to specific branches (!= dev)
+#  and internal pushes to other branches than main
 
 on:
   pull_request:
     branches-ignore:
-      - "master"
+      - "main"
     paths-ignore: # not always respected. See https://github.com/actions/runner/issues/2324#issuecomment-1703345084
       - ".github/**"
       - "**.md"
   push:
     branches-ignore:
-      - "dev"
-      - "master"
+      - "main"
     paths-ignore:
       - ".github/**"
       - "**.md"
