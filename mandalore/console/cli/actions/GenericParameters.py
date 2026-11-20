@@ -16,7 +16,7 @@ class ContainerSelector:
                                                      metavar="CONTAINER",
                                                      nargs='?',
                                                      action="store",
-                                                     help="Tag used to target an Mandalore container",
+                                                     help="Tag used to target a Mandalore container",
                                                      completer=ContainerCompleter)
 
         # Create group parameter for container selection
@@ -36,8 +36,14 @@ class ContainerMultiSelector:
                                         help="Tag used to target one or more Mandalore containers",
                                         completer=ContainerCompleter)
 
+        self.all_containers = Option("--all",
+                                     dest="all_containers",
+                                     action="store_true",
+                                     help="Select every Mandalore container")
+
         # Create group parameter for container multi selection
         groupArgs.append(GroupArg({"arg": self.multicontainertag, "required": False},
+                                  {"arg": self.all_containers, "required": False},
                                   title="[blue]Containers selection options[/blue]"))
 
 
@@ -62,7 +68,7 @@ class ContainerStart:
 
 
 class ContainerSpawnShell(ContainerStart):
-    """Generic parameter class to spawn a shell on an mandalore container.
+    """Generic parameter class to spawn a shell on a mandalore container.
     This generic class is used by start and restart"""
 
     def __init__(self, groupArgs: List[GroupArg]):
@@ -113,7 +119,7 @@ class ImageSelector:
                                                  metavar="IMAGE",
                                                  nargs='?',
                                                  action="store",
-                                                 help="Tag used to target an Mandalore image",
+                                                 help="Tag used to target a Mandalore image",
                                                  completer=ImageCompleter)
 
         # Create group parameter for image selection
@@ -133,8 +139,14 @@ class ImageMultiSelector:
                                     help="Tag used to target one or more Mandalore images",
                                     completer=ImageCompleter)
 
+        self.all_images = Option("--all",
+                                 dest="all_images",
+                                 action="store_true",
+                                 help="Select every installed Mandalore image")
+
         # Create group parameter for image multi selection
         groupArgs.append(GroupArg({"arg": self.multiimagetag, "required": False},
+                                  {"arg": self.all_images, "required": False},
                                   title="[blue]Images selection options[/blue]"))
 
 

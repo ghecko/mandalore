@@ -1,7 +1,7 @@
 blank_issues_enabled: false
 contact_links:
   - name: Read the Mandalore documentation
-    url: https://github.com/ghecko/mandalore/wiki
+    url: https://github.com/ghecko/mandalore-docs
     about: 'An answer to your question may already be available in the documentation!'
   - name: Create an issue regarding the Mandalore [IMAGE] project
     url: https://github.com/ghecko/mandalore-images/issues

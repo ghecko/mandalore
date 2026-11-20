@@ -1,7 +1,9 @@
 import os
+import re
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from time import sleep
-from typing import List, Optional, Union, cast
+from typing import Dict, List, Optional, Tuple, Union, cast
 
 import docker
 import requests.exceptions
@@ -48,13 +50,13 @@ class DockerUtils(metaclass=MetaSingleton):
         except DockerException as err:
             if 'ConnectionRefusedError' in str(err):
                 logger.critical(f"Unable to connect to docker (from env config). Is docker running on your machine? Exiting.{os.linesep}"
-                                f"    Check documentation for help: https://mandalore.readthedocs.io/en/latest/getting-started/faq.html#unable-to-connect-to-docker")
+                                f"    Check documentation for help: {ConstantConfig.documentation}")
             elif 'FileNotFoundError' in str(err):
                 logger.critical(f"Unable to connect to docker. Is docker installed on your machine? Exiting.{os.linesep}"
-                                f"    Check documentation for help: https://mandalore.readthedocs.io/en/latest/getting-started/faq.html#unable-to-connect-to-docker")
+                                f"    Check documentation for help: {ConstantConfig.documentation}")
             elif 'PermissionError' in str(err):
                 logger.critical(f"Docker is installed on your host but you don't have the permission to interact with it. Exiting.{os.linesep}"
-                                f"    Check documentation for help: https://mandalore.readthedocs.io/en/latest/getting-started/install.html#optional-run-mandalore-with-appropriate-privileges")
+                                f"    Check documentation for help: {ConstantConfig.documentation}")
             else:
                 logger.error(err)
                 logger.critical(
@@ -97,7 +99,7 @@ class DockerUtils(metaclass=MetaSingleton):
         return self.__containers
 
     def createContainer(self, model: MandaloreContainerTemplate, temporary: bool = False) -> MandaloreContainer:
-        """Create an Mandalore container from an MandaloreContainerTemplate configuration.
+        """Create a Mandalore container from an MandaloreContainerTemplate configuration.
         Return an MandaloreContainer if the creation was successful."""
         logger.info("Creating new mandalore container")
         model.prepare()
@@ -168,6 +170,67 @@ class DockerUtils(metaclass=MetaSingleton):
             # Not reachable, critical logging will exit
             return  # type: ignore
         return MandaloreContainer(container, model)
+
+    def cloneContainer(self, source: MandaloreContainer, image: MandaloreImage, container_name: str) -> MandaloreContainer:
+        """Create a new container from another Mandalore image, with the exact same configuration as the source container
+        (host config, mounts, network, devices, user environment variables, labels and command).
+        Variables and labels inherited from the previous image are not copied so the new image defaults apply.
+        Raise APIError if docker refuses the creation."""
+        source_container = source.getDockerObject()
+        source_container.reload()
+        config: Dict = source_container.attrs.get("Config") or {}
+        host_config: Dict = dict(source_container.attrs.get("HostConfig") or {})
+        previous_image_config: Dict = {}
+        try:
+            previous_image_config = source_container.image.attrs.get("Config") or {}
+        except (ImageNotFound, NotFound):
+            logger.warning("The previous image of this container no longer exists, every environment variable is kept as is.")
+        image_envs = set(previous_image_config.get("Env") or [])
+        envs = [env for env in config.get("Env") or [] if env not in image_envs]
+        image_labels: Dict = previous_image_config.get("Labels") or {}
+        labels = {k: v for k, v in (config.get("Labels") or {}).items() if image_labels.get(k) != v}
+        entrypoint = config.get("Entrypoint") if config.get("Entrypoint") != previous_image_config.get("Entrypoint") else None
+        command = config.get("Cmd") if config.get("Cmd") != previous_image_config.get("Cmd") else None
+
+        # The wrapper may have been moved / reinstalled since the container creation: refresh the spawn.sh mount source
+        spawn_path = str(ConstantConfig.spawn_context_path_obj)
+        spawn_target = "/.mandalore/spawn.sh"
+        for mount in host_config.get("Mounts") or []:
+            if mount.get("Target") == spawn_target:
+                mount["Source"] = spawn_path
+        if host_config.get("Binds"):
+            binds = []
+            for bind in host_config["Binds"]:
+                if f":{spawn_target}" in bind:
+                    bind = spawn_path + bind[bind.index(f":{spawn_target}"):]
+                binds.append(bind)
+            host_config["Binds"] = binds
+
+        # Exposed ports are required for the port bindings
+        ports: List[Union[int, Tuple[int, str]]] = []
+        for port_key in (host_config.get("PortBindings") or {}).keys():
+            port, _, proto = str(port_key).partition('/')
+            if port.isdigit():
+                ports.append((int(port), proto or "tcp"))
+
+        logger.debug(f"Cloning container {source_container.name} as {container_name} using image {image.getDockerRef()}")
+        response = self.__client.api.create_container(image=image.getDockerRef(),
+                                                      name=container_name,
+                                                      hostname=config.get("Hostname"),
+                                                      domainname=config.get("Domainname") or None,
+                                                      user=config.get("User") or None,
+                                                      environment=envs,
+                                                      labels=labels,
+                                                      entrypoint=entrypoint,
+                                                      command=command,
+                                                      working_dir=config.get("WorkingDir") or None,
+                                                      tty=config.get("Tty", True),
+                                                      stdin_open=config.get("OpenStdin", True),
+                                                      detach=True,
+                                                      ports=ports if len(ports) > 0 else None,
+                                                      host_config=host_config)
+        self.clearCache()
+        return MandaloreContainer(self.__client.containers.get(response["Id"]))
 
     def getContainer(self, tag: str) -> MandaloreContainer:
         """Get an MandaloreContainer from tag name."""
@@ -366,8 +429,8 @@ class DockerUtils(metaclass=MetaSingleton):
         ids = set()
         for img in images:
             # len tags = 0 handle mandalore <none> images (nightly image lost their tag after update)
-            if len(img.attrs.get('RepoTags', [])) == 0 or \
-                    ConstantConfig.IMAGE_NAME in [repo_tag.split(':')[0] for repo_tag in img.attrs.get("RepoTags", [])]:
+            if len((img.attrs.get('RepoTags') or [])) == 0 or \
+                    ConstantConfig.IMAGE_NAME in [repo_tag.rsplit(':', 1)[0] for repo_tag in (img.attrs.get("RepoTags") or [])]:
                 result.append(img)
                 ids.add(img.id)
 
@@ -413,37 +476,49 @@ class DockerUtils(metaclass=MetaSingleton):
         return result
 
     @staticmethod
-    def __listRemoteImages(status: Status) -> List[MetaImages]:
-        """List remote dockerhub images available.
-        Return a list of MandaloreImage"""
-        logger.debug("Fetching remote image tags, digests and sizes")
-        remote_results = []
-        # Define max number of tags to download from dockerhub (in order to limit download time and discard historical versions)
-        page_size = 20
-        page_max = 3
-        current_page = 1
-        url: Optional[str] = f"https://{ConstantConfig.DOCKER_HUB}/v2/repositories/{ConstantConfig.IMAGE_NAME}/tags?page=1&page_size={page_size}"
-        # Handle multi-page tags from registry
-        while url is not None:
-            if current_page > page_max:
-                logger.debug("Max page limit reached. In non-verbose mode, downloads will stop there.")
-                if not logger.isEnabledFor(ExeLog.VERBOSE):
-                    break
-            current_page += 1
-            if logger.isEnabledFor(ExeLog.VERBOSE):
-                status.update(status=f"Fetching registry information from [green]{url}[/green]")
-            docker_repo_response = WebUtils.runJsonRequest(url, "Dockerhub")
-            if docker_repo_response is None:
-                logger.warning("Skipping online queries.")
-                return []
-            error_message = docker_repo_response.get("message")
-            if error_message:
-                logger.error(f"Dockerhub send an error message: {error_message}")
-            for docker_images in docker_repo_response.get("results", []):
-                meta_image = MetaImages(docker_images)
-                remote_results.append(meta_image)
-            url = docker_repo_response.get("next")  # handle multiple page tags
-        # Remove duplication (version specific / latest release)
+    def __selectRemoteTags(tags: List[str]) -> List[str]:
+        """Select the registry tags worth inspecting: every 'latest' tag (no version, e.g. full, light, nightly)
+        and the most recent version-specific tag of each image (e.g. full-3.1.2), used to resolve the latest version number.
+        In verbose mode, the 3 most recent versions of each image are inspected."""
+        latest_tags: List[str] = []
+        versions: Dict[str, List[str]] = {}
+        for tag in tags:
+            if tag.startswith("sha256-"):
+                # Signatures / attestations stored as tags
+                continue
+            if MetaImages.tagNameParsing(tag):
+                versions.setdefault(tag.split('-')[0], []).append(tag)
+            else:
+                latest_tags.append(tag)
+        keep = 3 if logger.isEnabledFor(ExeLog.VERBOSE) else 1
+
+        def version_key(tag_name: str) -> Tuple[int, ...]:
+            return tuple(int(x) for x in re.findall(r"\d+", MetaImages.tagNameParsing(tag_name)))
+
+        result = list(latest_tags)
+        for version_tags in versions.values():
+            result += sorted(version_tags, key=version_key, reverse=True)[:keep]
+        return result
+
+    @classmethod
+    def __listRemoteImages(cls, status: Status) -> List[MetaImages]:
+        """List remote images available on the registry.
+        Return a list of MetaImages"""
+        logger.debug(f"Fetching remote image tags, digests and sizes from {ConstantConfig.IMAGE_NAME}")
+        if logger.isEnabledFor(ExeLog.VERBOSE):
+            status.update(status=f"Fetching registry information from [green]{ConstantConfig.IMAGE_NAME}[/green]")
+        tags = WebUtils.listRegistryTags()
+        if tags is None:
+            logger.verbose("Skipping online queries.")
+            return []
+        selected_tags = cls.__selectRemoteTags(tags)
+        logger.debug(f"Inspecting remote tags: {', '.join(selected_tags)}")
+        remote_results: List[MetaImages] = []
+        # Each tag requires several registry requests: inspect them concurrently
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            for data in executor.map(WebUtils.getRemoteImageData, selected_tags):
+                if data is not None and len(data.get("images", [])) > 0:
+                    remote_results.append(MetaImages(data))
         return remote_results
 
     def __findImageMatch(self, remote_image: MandaloreImage) -> None:

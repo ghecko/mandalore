@@ -220,7 +220,7 @@ class EnvInfo:
                     file_path = (dir_path / "settings-store.json") if (dir_path / "settings-store.json").is_file() else (dir_path / "settings.json")
                 logger.debug(f"Loading Docker Desktop config from {file_path}")
                 try:
-                    with open(file_path, 'r') as docker_desktop_config:
+                    with open(file_path, 'r', encoding='utf-8') as docker_desktop_config:
                         cls.__docker_desktop_resource_config = json.load(docker_desktop_config)
                 except FileNotFoundError:
                     logger.warning(f"Docker Desktop configuration file not found: '{file_path}'")

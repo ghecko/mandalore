@@ -6,33 +6,37 @@ build-backend = "pdm.backend"
 name = "Mandalore"
 dynamic = ["version"]
 description = "Python wrapper to use Mandalore, a container based fully featured and community-driven hacking environment."
+# Original Exegol authors (Mandalore is a GPLv3 fork of Exegol 4.3.12)
 authors = [
     { name = "Dramelac", email = "dramelac@pm.me" },
     { name = "Shutdown", email = "nwodtuhs@pm.me" },
+]
+maintainers = [
+    { name = "ghecko" },
 ]
 license = { file = "LICENSE" }
 readme = { file = "README.md", content-type = "text/markdown" }
 classifiers = [
     "Development Status :: 5 - Production/Stable",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Operating System :: OS Independent",
 ]
 keywords = ["pentest", "redteam", "ctf", "mandalore"]
 
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
-    "docker~=7.1.0",
-    "requests~=2.32.3",
-    "rich~=13.7.1",
-    "GitPython~=3.1.43",
+    "docker~=7.1",
+    "requests~=2.32",
+    "rich>=14.0,<16",
+    "GitPython~=3.1",
     "PyYAML>=6.0.2",
-    "argcomplete~=3.5.0",
-    "tzlocal~=5.2; platform_system != 'Linux'"
+    "argcomplete~=3.6",
+    "tzlocal~=5.3; platform_system != 'Linux'"
 ]
 
 [dependency-groups]
@@ -43,8 +47,8 @@ testing = ["mypy", "types-PyYAML", "types-requests", "types-tzlocal", "pytest"]
 mandalore = "mandalore.manager.MandaloreController:main"
 
 [project.urls]
-Homepage = "https://github.com/ghecko/mandalore/wiki"
-Documentation = "https://github.com/ghecko/mandalore/wiki"
+Homepage = "https://github.com/ghecko/mandalore"
+Documentation = "https://github.com/ghecko/mandalore-docs"
 Repository = "https://github.com/ghecko/mandalore.git"
 Issues = "https://github.com/ghecko/mandalore/issues"
 
@@ -55,3 +59,7 @@ path = "mandalore/config/ConstantConfig.py"
 
 [tool.pdm.build]
 excludes = ["tests"]
+
+[tool.pytest.ini_options]
+python_files = ["*_test.py"]
+testpaths = ["tests"]

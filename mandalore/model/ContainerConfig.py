@@ -17,7 +17,7 @@ from rich.prompt import Prompt
 from mandalore.config.ConstantConfig import ConstantConfig
 from mandalore.config.EnvInfo import EnvInfo
 from mandalore.config.UserConfig import UserConfig
-from mandalore.console.ConsoleFormat import boolFormatter, getColor
+from mandalore.console.ConsoleFormat import boolFormatter, getColor, formatDate
 from mandalore.console.MandalorePrompt import Confirm
 from mandalore.console.cli.ParametersManager import ParametersManager
 from mandalore.exceptions.MandaloreExceptions import ProtocolNotSupported, CancelOperation
@@ -32,7 +32,7 @@ if EnvInfo.is_windows_shell or EnvInfo.is_mac_shell:
 
 
 class ContainerConfig:
-    """Configuration class of an mandalore container"""
+    """Configuration class of a mandalore container"""
 
     # Default hardcoded value
     __default_entrypoint = ["/bin/bash", "/.mandalore/entrypoint.sh"]
@@ -439,7 +439,14 @@ class ContainerConfig:
         if not self.__share_timezone:
             logger.verbose("Config: Enabling host timezones")
             if EnvInfo.is_windows_shell or EnvInfo.is_mac_shell:
-                current_tz = get_localzone_name()
+                current_tz: Optional[str]
+                try:
+                    current_tz = get_localzone_name()
+                except Exception as e:
+                    logger.debug(f"Unable to detect the local timezone: {e}")
+                    current_tz = None
+                # Fallback to the TZ environment variable
+                current_tz = current_tz or os.getenv("TZ")
                 if current_tz:
                     logger.debug(f"Sharing timezone via TZ env var: '{current_tz}'")
                     self.addEnv("TZ", current_tz)
@@ -461,9 +468,15 @@ class ContainerConfig:
                     logger.verbose("Volume was successfully added for [magenta]/etc/localtime[/magenta]")
                 except CancelOperation as e:
                     if not timezone_loaded:
-                        # If neither file was found, disable the functionality
-                        logger.error(f"The host's timezone could not be shared: {e}")
-                        return
+                        # If neither file was found, fallback to the TZ environment variable
+                        host_tz = os.getenv("TZ")
+                        if host_tz:
+                            logger.verbose(f"Sharing timezone via TZ env var: '{host_tz}'")
+                            self.addEnv("TZ", host_tz)
+                        else:
+                            # Otherwise, disable the functionality
+                            logger.error(f"The host's timezone could not be shared: {e}")
+                            return
                     else:
                         logger.warning("File [magenta]/etc/localtime[/magenta] is [orange3]missing[/orange3] on host, "
                                        "cannot create volume for this. Relying instead on [magenta]/etc/timezone[/magenta] [orange3](deprecated)[/orange3].")
@@ -744,7 +757,7 @@ class ContainerConfig:
     def __checkVPNConfigDNS(vpn_path: Union[str, Path]) -> None:
         logger.verbose("Checking OpenVPN config file")
         configs = ["script-security 2", "up /etc/openvpn/update-resolv-conf", "down /etc/openvpn/update-resolv-conf"]
-        with open(vpn_path, 'r') as vpn_file:
+        with open(vpn_path, 'r', encoding='utf-8', errors='replace') as vpn_file:
             for line in vpn_file:
                 line = line.strip()
                 if line in configs:
@@ -1397,7 +1410,7 @@ class ContainerConfig:
         If the creation date has not been supplied on the container, return empty string."""
         if self.__creation_date is None:
             return ""
-        return datetime.strptime(self.__creation_date, "%Y-%m-%dT%H:%M:%SZ").strftime("%d/%m/%Y %H:%M")
+        return formatDate(self.__creation_date)
 
     def getTextMounts(self, verbose: bool = False) -> str:
         """Text formatter for Mounts configurations. The verbose mode does not exclude technical volumes."""

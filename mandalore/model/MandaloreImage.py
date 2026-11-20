@@ -17,7 +17,7 @@ from mandalore.utils.WebUtils import WebUtils
 
 
 class MandaloreImage(SelectableInterface):
-    """Class of an mandalore image. Container every information about the docker image."""
+    """Class of a mandalore image. Container every information about the docker image."""
 
     def __init__(self,
                  name: str = "NONAME",
@@ -89,15 +89,15 @@ class MandaloreImage(SelectableInterface):
         # If docker object exists, image is already installed
         self.__is_install = True
         # Set init values from docker object
-        if len(self.__image.attrs["RepoTags"]) > 0:
+        if len((self.__image.attrs.get("RepoTags") or [])) > 0:
             # Tag as outdated until the latest tag is found
             self.__outdated = True
             # Tag as a version specific until the latest tag is found
             self.__version_specific = True
             name = self.__name  # Init with old name
             self.__name = ""
-            for repo_tag in self.__image.attrs["RepoTags"]:
-                repo, name = repo_tag.split(':')
+            for repo_tag in (self.__image.attrs.get("RepoTags") or []):
+                repo, name = repo_tag.rsplit(':', 1)
                 if not repo.startswith(ConstantConfig.IMAGE_NAME):
                     # Ignoring external images (set container using external image as outdated)
                     continue
@@ -134,7 +134,7 @@ class MandaloreImage(SelectableInterface):
         # Set local image ID
         self.__setImageId(self.__image.attrs["Id"])
         # If this image is remote, set digest ID
-        self.__is_remote = not (len(self.__image.attrs["RepoDigests"]) == 0 and self.__checkLocalLabel())
+        self.__is_remote = not (len((self.__image.attrs.get("RepoDigests") or [])) == 0 and self.__checkLocalLabel())
         if self.__is_remote:
             self.__setDigest(self.__parseDigest(self.__image))
         # Default status, must be refreshed later if some parameters will be changed externally
@@ -168,11 +168,11 @@ class MandaloreImage(SelectableInterface):
         else:
             self.__is_update = self.__digest == self.__parseDigest(docker_image)
         # If this image is remote, set digest ID
-        self.__is_remote = not (len(self.__image.attrs["RepoDigests"]) == 0 and self.__checkLocalLabel())
+        self.__is_remote = not (len((self.__image.attrs.get("RepoDigests") or [])) == 0 and self.__checkLocalLabel())
         if self.__is_remote:
             self.__setDigest(self.__parseDigest(self.__image))
         # Add version tag (if available)
-        for repo_tag in docker_image.attrs["RepoTags"]:
+        for repo_tag in (docker_image.attrs.get("RepoTags") or []):
             tmp_name, tmp_tag = repo_tag.split(':')
             version_parsed = MetaImages.tagNameParsing(tmp_tag)
             if tmp_name == ConstantConfig.IMAGE_NAME and version_parsed:
@@ -382,9 +382,9 @@ class MandaloreImage(SelectableInterface):
             current_arch = current_local_img.getArch()
             selected = None
             default = None
-            for sub_image in img.attrs.get('RepoTags'):
+            for sub_image in img.attrs.get('RepoTags') or []:
                 # parse multi-tag images (latest tag / version specific tag)
-                current_tag = sub_image.split(':')[1]
+                current_tag = sub_image.rsplit(':', 1)[-1]
                 tag_match = remote_img_dict.get(current_tag)
                 if tag_match and current_arch in tag_match.list_arch:
                     default = tag_match
@@ -392,9 +392,9 @@ class MandaloreImage(SelectableInterface):
                     if default.is_latest:
                         selected = default
 
-            if len(img.attrs.get('RepoTags', [])) == 0:
+            if len(img.attrs.get('RepoTags') or []) == 0:
                 # If RepoTags is lost, fallback to RepoDigests (happen when there is multiple arch install on the same tag name)
-                for sub_image in img.attrs.get('RepoDigests'):
+                for sub_image in img.attrs.get('RepoDigests') or []:
                     current_id = sub_image.split('@')[-1]
                     for remote in remote_images:
                         if remote.meta_id == current_id:
@@ -540,7 +540,7 @@ class MandaloreImage(SelectableInterface):
     def __parseDigest(docker_image: Image) -> str:
         """Parse the remote image digest ID.
         Return digest id from the docker object."""
-        for digest_id in docker_image.attrs["RepoDigests"]:
+        for digest_id in (docker_image.attrs.get("RepoDigests") or []):
             if digest_id.startswith(ConstantConfig.IMAGE_NAME):  # Find digest id from the right repository
                 return digest_id.split('@')[1]
         return ""
@@ -599,7 +599,7 @@ class MandaloreImage(SelectableInterface):
             # Handle empty string
             return "[bright_black]N/A[/bright_black]"
         elif "N/A" not in self.__build_date.upper():
-            return datetime.strptime(self.__build_date, "%Y-%m-%dT%H:%M:%SZ").strftime("%d/%m/%Y %H:%M")
+            return ConsoleFormat.formatDate(self.__build_date)
         else:
             return self.__build_date
 
@@ -688,8 +688,8 @@ class MandaloreImage(SelectableInterface):
         """Find and return the right id to target the current image for docker.
         If tag is lost, fallback to local image id."""
         assert self.__image is not None
-        if self.getFullName() in self.__image.attrs.get('RepoTags', []):
+        if self.getFullName() in (self.__image.attrs.get('RepoTags') or []):
             return self.getFullName()
-        elif self.getFullVersionName() in self.__image.attrs.get('RepoTags', []):
+        elif self.getFullVersionName() in (self.__image.attrs.get('RepoTags') or []):
             return self.getFullVersionName()
         return self.getLocalId()

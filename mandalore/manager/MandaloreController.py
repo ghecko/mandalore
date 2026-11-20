@@ -7,6 +7,7 @@ try:
     import requests
     import urllib3
 
+    from mandalore.config.ConstantConfig import ConstantConfig
     from mandalore.utils.ExeLog import logger, ExeLog, console
     from mandalore.utils.DockerUtils import DockerUtils
     from mandalore.console.cli.ParametersManager import ParametersManager
@@ -39,6 +40,11 @@ class MandaloreController:
         """Dynamically retrieve the main function corresponding to the action selected by the user
         and execute it on the main thread"""
         MandaloreManager.print_version()
+        if ConstantConfig.legacy_config_path is not None:
+            logger.warning(f"Mandalore is using the legacy configuration directory [magenta]{ConstantConfig.legacy_config_path}[/magenta] "
+                           f"(created by a previous version launched with sudo). "
+                           f"To use your own home directory instead, move it to [magenta]{ConstantConfig.user_home / '.mandalore'}[/magenta] "
+                           f"once every container using its workspaces has been removed.")
         DockerUtils()  # Init dockerutils
         MandaloreManager.print_debug_banner()
         # Check for missing parameters
@@ -57,7 +63,7 @@ def print_exception_banner() -> None:
     logger.error("It seems that something unexpected happened ...")
     logger.error("To draw our attention to the problem and allow us to fix it, you can share your error with us "
                  "(by [orange3]copying and pasting[/orange3] it with this syntax: ``` <error> ```) "
-                 "by creating a GitHub issue at this address: https://github.com/ghecko/mandalore/issues")
+                 f"by creating a GitHub issue at this address: {ConstantConfig.ISSUES_URL}")
     logger.success("Thank you for your collaboration!")
 
 

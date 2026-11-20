@@ -19,6 +19,7 @@ from mandalore.model.MandaloreContainerTemplate import MandaloreContainerTemplat
 from mandalore.model.MandaloreImage import MandaloreImage
 from mandalore.model.SelectableInterface import SelectableInterface
 from mandalore.utils.ExeLog import logger, console, ExeLog
+from mandalore.utils.FsUtils import getDirectorySize
 
 
 class MandaloreTUI:
@@ -122,7 +123,7 @@ class MandaloreTUI:
         logfile = None
         if ParametersManager().build_log is not None:
             # Opening log file in line buffering mode (1) to support tail -f [file]
-            logfile = open(ParametersManager().build_log, 'a', buffering=1)
+            logfile = open(ParametersManager().build_log, 'a', buffering=1, encoding='utf-8', errors='replace')
         # Follow stream
         for line in build_stream:
             stream_text = line.get("stream", '')
@@ -231,6 +232,7 @@ class MandaloreTUI:
         table.add_column("Image tag")
         table.add_column("Configurations")
         if verbose_mode:
+            table.add_column("Size")
             table.add_column("Mounts")
             table.add_column("Devices")
             table.add_column("Ports")
@@ -240,6 +242,7 @@ class MandaloreTUI:
             if verbose_mode:
                 table.add_row(container.getId(), container.getDisplayName(), container.getTextStatus(), container.image.getDisplayName(),
                               container.config.getTextFeatures(verbose_mode),
+                              container.getTextDiskUsage(),
                               container.config.getTextMounts(debug_mode),
                               container.config.getTextDevices(debug_mode),
                               container.config.getTextPorts(),
@@ -457,6 +460,14 @@ class MandaloreTUI:
         recap.add_row("[bold blue]Remote Desktop[/bold blue]", container.config.getDesktopConfig())
         if creation_date:
             recap.add_row("[bold blue]Creation date[/bold blue]", creation_date)
+        if isinstance(container, MandaloreContainer):
+            disk_usage = f"Container: {container.getTextDiskUsage()}"
+            if logger.isEnabledFor(ExeLog.VERBOSE):
+                workspace_path = container.config.getHostWorkspacePath()
+                workspace_size = getDirectorySize(workspace_path) if workspace_path and os.path.isdir(workspace_path) else None
+                if workspace_size is not None:
+                    disk_usage += f" / Workspace: {ConsoleFormat.formatSize(workspace_size)}"
+            recap.add_row("[bold blue]Disk usage[/bold blue]", disk_usage)
         recap.add_row("[bold blue]Console GUI[/bold blue]", boolFormatter(container.config.isGUIEnable()) + container.config.getTextGuiSockets())
         recap.add_row("[bold blue]Network[/bold blue]", container.config.getTextNetworkMode())
         recap.add_row("[bold blue]Timezone[/bold blue]", boolFormatter(container.config.isTimezoneShared()))

@@ -5,7 +5,7 @@ import stat
 import subprocess
 import sys
 from pathlib import Path, PurePath
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 
 from mandalore.config.EnvInfo import EnvInfo
 from mandalore.utils.ExeLog import logger
@@ -101,7 +101,7 @@ def check_sysctl_value(sysctl: str, compare_to: str) -> bool:
         with open(sysctl_path, 'r') as conf:
             config = conf.read().strip()
             logger.debug(f"Checking sysctl value {sysctl}={config} (compare to {compare_to})")
-            return conf.read().strip() == compare_to
+            return config == compare_to
     except FileNotFoundError:
         logger.debug(f"Sysctl file {sysctl} not found!")
     except PermissionError:
@@ -124,6 +124,30 @@ def get_user_id() -> Tuple[int, int]:
     else:
         user_gid = int(user_gid_raw)
     return user_uid, user_gid
+
+
+def getDirectorySize(path: Union[str, Path]) -> Optional[int]:
+    """Compute the total size (in bytes) of a directory on the host, without following symlinks.
+    Return None if the directory cannot be read."""
+    total = 0
+    stack = [str(path)]
+    readable = False
+    while stack:
+        current = stack.pop()
+        try:
+            with os.scandir(current) as entries:
+                readable = True
+                for entry in entries:
+                    try:
+                        if entry.is_dir(follow_symlinks=False):
+                            stack.append(entry.path)
+                        elif entry.is_file(follow_symlinks=False):
+                            total += entry.stat(follow_symlinks=False).st_size
+                    except OSError:
+                        continue
+        except OSError:
+            continue
+    return total if readable else None
 
 
 def mkdir(path) -> None:

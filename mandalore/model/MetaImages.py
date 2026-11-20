@@ -9,10 +9,11 @@ from mandalore.utils.WebUtils import WebUtils
 class MetaImages:
     """Meta model to store and organise multi-arch images"""
 
-    def __init__(self, dockerhub_data) -> None:
-        """Create a MetaImage object to handle multi-arch docker registry images in a single point"""
+    def __init__(self, dockerhub_data: Dict[str, Any]) -> None:
+        """Create a MetaImage object to handle multi-arch docker registry images in a single point.
+        dockerhub_data format: {name, digest, images: [{architecture, variant, digest, size}]}"""
         # Raw data
-        self.__dockerhub_images: List[Dict[str, Optional[Union[str, int]]]] = dockerhub_data.get('images', {})
+        self.__dockerhub_images: List[Dict[str, Optional[Union[str, int]]]] = dockerhub_data.get('images', [])
         # Attributes
         self.name: str = dockerhub_data.get('name', '')
         self.multi_arch: bool = len(self.__dockerhub_images) > 1
@@ -23,9 +24,10 @@ class MetaImages:
             if self.multi_arch:
                 logger.debug(f"Missing ID for image {self.name}, manual fetching ! May slow down the process..")
                 self.meta_id = WebUtils.getMetaDigestId(self.name)
-            else:
+            elif len(self.__dockerhub_images) > 0:
                 # Single arch image dont need virtual meta_id
-                self.__dockerhub_images[0].get('digest')
+                digest = self.__dockerhub_images[0].get('digest')
+                self.meta_id = str(digest) if digest else None
         self.version: str = self.tagNameParsing(self.name)
         self.is_latest: bool = not bool(self.version)  # Current image is latest if no version have been found from tag name
         # Post-process data
@@ -64,12 +66,15 @@ class MetaImages:
         arch_key = "architecture"
         variant_key = "variant"
         # Support Docker image struct with specific dict key
-        if type(docker_image) is Image:
-            docker_image = docker_image.attrs
+        attrs: Dict[str, Any]
+        if isinstance(docker_image, Image):
+            attrs = docker_image.attrs
             arch_key = "Architecture"
             variant_key = "Variant"
-        arch = str(docker_image.get(arch_key, "amd64"))
-        variant = docker_image.get(variant_key)
+        else:
+            attrs = docker_image
+        arch = str(attrs.get(arch_key) or "amd64")
+        variant = attrs.get(variant_key)
         if variant:
             arch += f"/{variant}"
         return arch
