@@ -47,7 +47,7 @@ volumes:
     # Mandalore resources are data and static tools downloaded in addition to docker images. These tools are complementary and are accessible directly from the host.
     mandalore_resources_path: {self.mandalore_resources_path}
     
-    # Mandalore images are the source of the mandalore environments. These sources are needed when locally building an mandalore image.
+    # Mandalore images are the source of the mandalore environments. These sources are needed when locally building a mandalore image.
     mandalore_images_path: {self.mandalore_images_path}
     
     # When containers do not have an explicitly declared workspace, a dedicated folder will be created at this location to share the workspace with the host but also to save the data after deleting the container

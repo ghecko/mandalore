@@ -66,7 +66,6 @@ class DockerUtils(metaclass=MetaSingleton):
             logger.critical("Docker daemon seems busy, Mandalore receives timeout response. Try again later.")
         self.__images: Optional[List[MandaloreImage]] = None
         self.__containers: Optional[List[MandaloreContainer]] = None
-        self.__legacy_images_checked: bool = False
 
     def clearCache(self) -> None:
         """Remove class's images and containers data cache
@@ -100,7 +99,7 @@ class DockerUtils(metaclass=MetaSingleton):
         return self.__containers
 
     def createContainer(self, model: MandaloreContainerTemplate, temporary: bool = False) -> MandaloreContainer:
-        """Create an Mandalore container from an MandaloreContainerTemplate configuration.
+        """Create a Mandalore container from an MandaloreContainerTemplate configuration.
         Return an MandaloreContainer if the creation was successful."""
         logger.info("Creating new mandalore container")
         model.prepare()
@@ -410,42 +409,10 @@ class DockerUtils(metaclass=MetaSingleton):
             logger.critical(f"The desired image is not installed or do not exist ({ConstantConfig.IMAGE_NAME}:{tag}). Exiting.")
         return  # type: ignore
 
-    def __migrateLegacyImages(self) -> None:
-        """Images installed or built with a previous image name (e.g. lksec/mandalore:full) are tagged with the current
-        image name (e.g. ghcr.io/ghecko/mandalore:full) so they keep being handled by Mandalore. Existing tags are never overwritten."""
-        if self.__legacy_images_checked:
-            return
-        self.__legacy_images_checked = True
-        for legacy_name in ConstantConfig.LEGACY_IMAGE_NAMES:
-            try:
-                legacy_images = self.__client.images.list(legacy_name)
-            except (APIError, ReadTimeout) as err:
-                logger.debug(f"Unable to list legacy images {legacy_name}: {err}")
-                continue
-            for img in legacy_images:
-                for repo_tag in img.attrs.get("RepoTags") or []:
-                    repo, tag = repo_tag.rsplit(':', 1)
-                    if repo != legacy_name:
-                        continue
-                    new_name = f"{ConstantConfig.IMAGE_NAME}:{tag}"
-                    try:
-                        self.__client.images.get(new_name)
-                        continue  # Already exists
-                    except ImageNotFound:
-                        pass
-                    except (APIError, ReadTimeout):
-                        continue
-                    try:
-                        img.tag(ConstantConfig.IMAGE_NAME, tag)
-                        logger.info(f"Legacy image [green]{repo_tag}[/green] is now also tagged as [green]{new_name}[/green]")
-                    except APIError as err:
-                        logger.debug(f"Unable to tag legacy image {repo_tag}: {err}")
-
     def __listLocalImages(self, tag: Optional[str] = None) -> List[Image]:
         """List local docker images already installed.
         Return a list of docker images objects"""
         logger.debug("Fetching local image tags, digests (and other attributes)")
-        self.__migrateLegacyImages()
         try:
             image_name = ConstantConfig.IMAGE_NAME + ("" if tag is None else f":{tag}")
             images = self.__client.images.list(image_name, filters={"dangling": False})

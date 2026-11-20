@@ -180,7 +180,7 @@ class UpdateManager:
 
     @classmethod
     def checkForWrapperUpdate(cls) -> bool:
-        """Check if there is an mandalore wrapper update available.
+        """Check if there is a mandalore wrapper update available.
         Return true if an update is available."""
         logger.debug(f"Last wrapper update check: {DataCache().get_wrapper_data().metadata.get_last_check_text()}")
         # Skipping update check

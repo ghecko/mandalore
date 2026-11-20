@@ -17,7 +17,7 @@ from mandalore.utils.WebUtils import WebUtils
 
 
 class MandaloreImage(SelectableInterface):
-    """Class of an mandalore image. Container every information about the docker image."""
+    """Class of a mandalore image. Container every information about the docker image."""
 
     def __init__(self,
                  name: str = "NONAME",

@@ -68,8 +68,6 @@ class ConstantConfig:
     IMAGE_REPOSITORY: str = f"{GITHUB_OWNER}/mandalore"
     # Full docker image name (used for docker pull / tag / local image lookups)
     IMAGE_NAME: str = f"{DOCKER_REGISTRY}/{IMAGE_REPOSITORY}"
-    # Image names used by previous Mandalore releases (local images are still recognized)
-    LEGACY_IMAGE_NAMES: Tuple[str, ...] = ("lksec/mandalore",)
     # Resources repository
     MANDALORE_IMAGES_REPO: str = f"https://github.com/{GITHUB_OWNER}/mandalore-images.git"
     MANDALORE_RESOURCES_REPO: str = f"https://github.com/{GITHUB_OWNER}/mandalore-resources.git"

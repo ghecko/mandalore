@@ -27,7 +27,7 @@ from mandalore.utils.imgsync.ImageScriptSync import ImageScriptSync
 
 
 class MandaloreContainer(MandaloreContainerTemplate, SelectableInterface):
-    """Class of an mandalore container already create in docker"""
+    """Class of a mandalore container already create in docker"""
 
     def __init__(self, docker_container: Container, model: Optional[MandaloreContainerTemplate] = None):
         logger.debug(f"Loading container: {docker_container.name}")

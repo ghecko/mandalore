@@ -16,7 +16,7 @@ class ContainerSelector:
                                                      metavar="CONTAINER",
                                                      nargs='?',
                                                      action="store",
-                                                     help="Tag used to target an Mandalore container",
+                                                     help="Tag used to target a Mandalore container",
                                                      completer=ContainerCompleter)
 
         # Create group parameter for container selection
@@ -68,7 +68,7 @@ class ContainerStart:
 
 
 class ContainerSpawnShell(ContainerStart):
-    """Generic parameter class to spawn a shell on an mandalore container.
+    """Generic parameter class to spawn a shell on a mandalore container.
     This generic class is used by start and restart"""
 
     def __init__(self, groupArgs: List[GroupArg]):
@@ -119,7 +119,7 @@ class ImageSelector:
                                                  metavar="IMAGE",
                                                  nargs='?',
                                                  action="store",
-                                                 help="Tag used to target an Mandalore image",
+                                                 help="Tag used to target a Mandalore image",
                                                  completer=ImageCompleter)
 
         # Create group parameter for image selection

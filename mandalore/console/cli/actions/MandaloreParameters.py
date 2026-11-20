@@ -6,7 +6,7 @@ from mandalore.utils.ExeLog import logger
 
 
 class Start(Command, ContainerCreation, ContainerSpawnShell):
-    """Automatically create, start / resume and enter an Mandalore container"""
+    """Automatically create, start / resume and enter a Mandalore container"""
 
     def __init__(self) -> None:
         Command.__init__(self)
@@ -32,7 +32,7 @@ class Start(Command, ContainerCreation, ContainerSpawnShell):
 
 
 class Stop(Command, ContainerMultiSelector):
-    """Stop an Mandalore container"""
+    """Stop a Mandalore container"""
 
     def __init__(self) -> None:
         Command.__init__(self)
@@ -49,7 +49,7 @@ class Stop(Command, ContainerMultiSelector):
 
 
 class Restart(Command, ContainerSelector, ContainerSpawnShell):
-    """Restart an Mandalore container"""
+    """Restart a Mandalore container"""
 
     def __init__(self) -> None:
         Command.__init__(self)
@@ -98,7 +98,7 @@ class Install(Command, ImageSelector):
                                        title="[bold cyan]Build[/bold cyan] [blue]specific options[/blue]"))
 
         self._usages = {
-            "Install or build interactively an mandalore image": "mandalore install",
+            "Install or build interactively a mandalore image": "mandalore install",
             "Install or update the [bright_blue]full[/bright_blue] image": "mandalore install [bright_blue]full[/bright_blue]",
             "Build interactively a local image named [blue]myimage[/blue]": "mandalore install [blue]myimage[/blue]",
             "Build the [blue]myimage[/blue] image based on the [bright_blue]full[/bright_blue] profile and log the operation": "mandalore install [blue]myimage[/blue] [bright_blue]full[/bright_blue] --build-log /tmp/build.log",
@@ -110,7 +110,7 @@ class Install(Command, ImageSelector):
 
 
 class Update(Command, ImageSelector):
-    """Update an Mandalore image"""
+    """Update a Mandalore image"""
 
     def __init__(self) -> None:
         Command.__init__(self)
@@ -131,7 +131,7 @@ class Update(Command, ImageSelector):
                                        title="[bold cyan]Update[/bold cyan] [blue]specific options[/blue]"))
 
         self._usages = {
-            "Install or update interactively an mandalore image": "mandalore update",
+            "Install or update interactively a mandalore image": "mandalore update",
             "Install or update the [bright_blue]full[/bright_blue] image": "mandalore update [bright_blue]full[/bright_blue]"
         }
 
@@ -235,7 +235,7 @@ class Remove(Command, ContainerMultiSelector):
 
 
 class Exec(Command, ContainerCreation, ContainerStart):
-    """Execute a command on an Mandalore container"""
+    """Execute a command on a Mandalore container"""
 
     def __init__(self) -> None:
         Command.__init__(self)
@@ -258,7 +258,7 @@ class Exec(Command, ContainerCreation, ContainerStart):
                                metavar="CONTAINER or IMAGE",
                                nargs='?',
                                action="store",
-                               help="Tag used to target an Mandalore container (by default) or an image (if --tmp is set).",
+                               help="Tag used to target a Mandalore container (by default) or an image (if --tmp is set).",
                                completer=HybridContainerImageCompleter)
 
         # Custom parameters

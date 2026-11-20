@@ -32,7 +32,7 @@ if EnvInfo.is_windows_shell or EnvInfo.is_mac_shell:
 
 
 class ContainerConfig:
-    """Configuration class of an mandalore container"""
+    """Configuration class of a mandalore container"""
 
     # Default hardcoded value
     __default_entrypoint = ["/bin/bash", "/.mandalore/entrypoint.sh"]

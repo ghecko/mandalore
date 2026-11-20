@@ -70,7 +70,7 @@ class MandaloreManager:
 
     @classmethod
     def start(cls) -> None:
-        """Create and/or start an mandalore container to finally spawn an interactive shell"""
+        """Create and/or start a mandalore container to finally spawn an interactive shell"""
         logger.info("Starting mandalore")
         # Check if the first positional parameter have been supplied
         cls.__interactive_mode = not bool(ParametersManager().containertag)
@@ -86,7 +86,7 @@ class MandaloreManager:
 
     @classmethod
     def exec(cls) -> None:
-        """Create and/or start an mandalore container to execute a specific command.
+        """Create and/or start a mandalore container to execute a specific command.
         The execution can be seen in console output or be relayed in the background as a daemon."""
         logger.info("Starting mandalore")
         if ParametersManager().tmp:
@@ -103,7 +103,7 @@ class MandaloreManager:
 
     @classmethod
     def stop(cls) -> None:
-        """Stop an mandalore container"""
+        """Stop a mandalore container"""
         logger.info("Stopping mandalore")
         container = cls.__loadOrCreateContainer(multiple=True, must_exist=True)
         assert container is not None and type(container) is list
@@ -112,7 +112,7 @@ class MandaloreManager:
 
     @classmethod
     def restart(cls) -> None:
-        """Stop and start an mandalore container"""
+        """Stop and start a mandalore container"""
         container = cast(MandaloreContainer, cls.__loadOrCreateContainer(must_exist=True))
         if container:
             container.stop(timeout=5)
@@ -144,8 +144,8 @@ class MandaloreManager:
 
     @classmethod
     def uninstall(cls) -> None:
-        """Remove an mandalore image"""
-        logger.info("Uninstalling an mandalore image")
+        """Remove a mandalore image"""
+        logger.info("Uninstalling a mandalore image")
         # Set log level to verbose in order to show every image installed including the outdated.
         if not logger.isEnabledFor(ExeLog.VERBOSE):
             logger.setLevel(ExeLog.VERBOSE)
@@ -164,8 +164,8 @@ class MandaloreManager:
 
     @classmethod
     def remove(cls) -> None:
-        """Remove an mandalore container"""
-        logger.info("Removing an mandalore container")
+        """Remove a mandalore container"""
+        logger.info("Removing a mandalore container")
         containers = cls.__loadOrCreateContainer(multiple=True, must_exist=True)
         assert type(containers) is list
         if len(containers) == 0:

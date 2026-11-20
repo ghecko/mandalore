@@ -48,8 +48,8 @@ class Command:
         # Root command usages (can be overwritten by subclasses to display different use cases)
         self._pre_usages = "[underline]To see specific examples run:[/underline][italic] mandalore [cyan]command[/cyan] -h[/italic]"
         self._usages = {
-            "Install (or build) an mandalore image": "mandalore install",
-            "Open an mandalore shell": "mandalore start",
+            "Install (or build) a mandalore image": "mandalore install",
+            "Open a mandalore shell": "mandalore start",
             "Show mandalore images & containers": "mandalore info",
             "Update an image": "mandalore update",
             "See commands examples to execute": "mandalore exec -h",
@@ -68,7 +68,7 @@ class Command:
                              default=True,
                              required=False,
                              help="Allow insecure server connections for web requests, "
-                                  "e.g. when fetching info from DockerHub "
+                                  "e.g. when fetching info from the image registry "
                                   "(default: [green]Secure[/green])")
         self.quiet = Option("-q", "--quiet",
                             dest="quiet",
