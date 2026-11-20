@@ -18,12 +18,16 @@ jobs:
       # IMPORTANT: this permission is mandatory for trusted publishing
       id-token: write
     needs: test
+    # Publishing is disabled until the PyPI project and its trusted publisher are configured:
+    # set the repository variable PYPI_PUBLISH to 'true' to enable it.
+    if: vars.PYPI_PUBLISH == 'true'
     steps:
-      - uses: actions/checkout@main
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          submodules: true
+          # Submodules are private repositories: they are not needed to build the wrapper package
+          submodules: false
       - name: Set up PDM
-        uses: pdm-project/setup-pdm@v4
+        uses: pdm-project/setup-pdm@544d7237314ee09c256785bd360f6b30add38b37 # v4.6
         with:
           python-version: "3.12"
       - name: Build Mandalore

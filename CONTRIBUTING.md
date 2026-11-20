@@ -1,13 +1,13 @@
 # Contributors documentation
-Check the full contributors (up-to-date) documentation here: https://mandalore.readthedocs.io/en/dev/community/contributors.html
+Check the full contributors (up-to-date) documentation here: https://github.com/ghecko/mandalore-docs
 
 # Wrapper & images (legacy)
 - the `main` branch is the stable version. Only Pull Requests are allowed on this branch.
 - the `dev` branch is used for active development. This is the bleeding-edge version, but is sometimes not as stable as the `master` (depending on the development cycle).
-- the `Mandalore` repository includes the mandalore.py wrapper code base, and features a `mandalore-docker-build` submodule tracking [Mandalore-images](https://github.com/ghecko/mandalore-images).
+- the `Mandalore` repository includes the mandalore.py wrapper code base, and features a `mandalore-images` submodule tracking [Mandalore-images](https://github.com/ghecko/mandalore-images).
 - changes to the images/dockerfiles/tools/installs must be done on the [Mandalore-images](https://github.com/ghecko/mandalore-images) repo.
-- by default, the wrapper pulls the latest DockerHub pre-built image for the install and updates
-- DockerHub automatic builds are configured as follows
+- by default, the wrapper pulls the latest pre-built image from the GitHub Container Registry (`ghcr.io/ghecko/mandalore`) for the install and updates
+- Automatic image builds are configured as follows
   - `nightly` image is built using the base Dockerfile whenever a commit is made on [Mandalore-images](https://github.com/ghecko/mandalore-images) `dev` branch.
   - `full` image is built using the base Dockerfile whenever a new tag is pushed on [Mandalore-images](https://github.com/ghecko/mandalore-images).
   - `ad`, `osint`, `web` and `light` images are built using specific Dockerfiles whenever a new tag is pushed on [Mandalore-images](https://github.com/ghecko/mandalore-images).

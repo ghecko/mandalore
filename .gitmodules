@@ -1,6 +1,6 @@
 [submodule "mandalore-images"]
 	path = mandalore-images
-	url = https://github.com/ghecko/mandalore-images.git
+	url = ../mandalore-images.git
 [submodule "mandalore-resources"]
 	path = mandalore-resources
-	url = https://github.com/ghecko/mandalore-resources.git
+	url = ../mandalore-resources.git
