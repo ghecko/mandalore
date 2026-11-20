@@ -1,7 +1,10 @@
 import binascii
+from datetime import datetime
 import logging
 import os
 from typing import Union, List, Tuple, Optional, cast, Sequence
+
+from docker.errors import APIError
 
 from mandalore.config.ConstantConfig import ConstantConfig
 from mandalore.config.EnvInfo import EnvInfo
@@ -21,7 +24,8 @@ from mandalore.model.MandaloreImage import MandaloreImage
 from mandalore.model.MandaloreModules import MandaloreModules
 from mandalore.model.SelectableInterface import SelectableInterface
 from mandalore.utils.DockerUtils import DockerUtils
-from mandalore.utils.ExeLog import logger, ExeLog
+from mandalore.utils.ContainerBackup import ContainerBackup
+from mandalore.utils.ExeLog import logger, ExeLog, console
 
 
 class MandaloreManager:
@@ -180,6 +184,113 @@ class MandaloreManager:
                 DockerUtils().removeImage(c.image, upgrade_mode=True)
 
     @classmethod
+    def upgrade(cls) -> None:
+        """Recreate one or more mandalore containers from the latest installed image, keeping their configuration and data"""
+        logger.info("Upgrading mandalore containers")
+        containers = cls.__loadOrCreateContainer(multiple=True, must_exist=True)
+        assert type(containers) is list
+        if len(containers) == 0:
+            logger.error("No containers were selected. Exiting.")
+            return
+        for container in containers:
+            try:
+                cls.__upgradeContainer(container)
+            except CancelOperation as e:
+                logger.error(f"Upgrade of [green]{container.name}[/green] cancelled{': ' + str(e) if str(e) else ''}.")
+            logger.empty_line()
+
+    @classmethod
+    def __selectUpgradeImage(cls, container: MandaloreContainer) -> MandaloreImage:
+        """Find the installed image that a container must be upgraded to (updating it from the registry on user request)."""
+        image_name: str = ParametersManager().upgrade_image or container.image.getName()
+        if not image_name or "BROKEN" in image_name or image_name == "NONAME":
+            raise CancelOperation("the image of this container cannot be identified, select one with --image")
+        candidates = [img for img in DockerUtils().listInstalledImages() if img.getName() == image_name]
+        image: Optional[MandaloreImage] = None
+        for img in candidates:
+            if not img.isLocked():
+                image = img
+                break
+        if image is None and len(candidates) > 0:
+            image = candidates[0]
+        # Only offer an image update when the registry reported a newer image (unknown status = no prompt)
+        if image is not None and not image.isUpToDate() and not image.isLocal() and bool(image.getLatestRemoteId()) \
+                and "Unknown" not in image.getStatus() and not ParametersManager().offline_mode \
+                and not ParametersManager().force_mode and \
+                Confirm(f"The image [green]{image_name}[/green] may not be up to date, do you want to [green]update[/green] it first?", default=True):
+            updated = UpdateManager.updateImage(image_name)
+            if updated is not None:
+                image = updated
+        if image is None:
+            if not ParametersManager().force_mode and not ParametersManager().offline_mode and \
+                    Confirm(f"The image [green]{image_name}[/green] is not installed, do you want to install it?", default=True):
+                image = UpdateManager.updateImage(image_name, install_mode=True)
+            if image is None:
+                raise CancelOperation(f"the image '{image_name}' is not installed")
+        return image
+
+    @classmethod
+    def __upgradeContainer(cls, container: MandaloreContainer) -> None:
+        """Upgrade process of a single container:
+        stop, rename the current container, create the new one with the same configuration, transfer user data.
+        On failure, the new container is removed and the previous one is restored."""
+        image = cls.__selectUpgradeImage(container)
+        docker_name = container.getDockerObject().name
+        if container.image.getLocalId() == image.getLocalId():
+            logger.success(f"Container [green]{container.name}[/green] already uses the latest installed [green]{image.getName()}[/green] image "
+                           f"({image.getImageVersion()}).")
+            return
+        logger.info(f"Container [green]{container.name}[/green]: image [orange3]{container.image.getName()} ({container.image.getImageVersion()})[/orange3] "
+                    f"→ [green]{image.getName()} ({image.getImageVersion()})[/green]")
+        logger.info(f"Kept: workspace, volumes, container configuration, {ContainerBackup.describe()}.")
+        logger.warning("Everything else modified inside the container (installed packages, files outside the workspace and volumes) "
+                       "will not be in the new container. The previous container is kept (renamed) unless --remove-old is set.")
+        if not ParametersManager().force_mode and not Confirm(f"Upgrade the container [green]{container.name}[/green]?", default=True):
+            raise CancelOperation
+        was_running = container.isRunning()
+        container.stop(timeout=5)
+        backup_name = f"{docker_name}-old-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+        container.rename(backup_name)
+        new_container: Optional[MandaloreContainer] = None
+        try:
+            new_container = DockerUtils().cloneContainer(container, image, docker_name)
+            new_container.postCreateSetup()
+            with console.status("Transferring user data to the new container", spinner_style="blue"):
+                restored = ContainerBackup.transfer(container.getDockerObject(), new_container.getDockerObject())
+            if len(restored) > 0:
+                logger.success(f"User data restored: {', '.join(restored)}")
+        except BaseException as e:
+            # Any failure (including logger.critical exits and user interruption) must restore the previous container
+            reason = e.explanation if isinstance(e, APIError) else (type(e).__name__ if isinstance(e, (SystemExit, KeyboardInterrupt)) else e)
+            logger.error(f"The upgrade failed ({reason}), restoring the previous container.")
+            if new_container is not None:
+                new_container.removeContainerOnly()
+            else:
+                # The creation may have partially succeeded
+                try:
+                    DockerUtils().getContainer(docker_name.replace("mandalore-", "", 1)).removeContainerOnly()
+                except ObjectNotFound:
+                    pass
+            container.rename(docker_name)
+            if was_running:
+                container.start()
+            if isinstance(e, (SystemExit, KeyboardInterrupt)):
+                logger.info("The previous container has been restored.")
+                raise
+            raise CancelOperation("the previous container has been restored")
+        logger.success(f"Container [green]{container.name}[/green] successfully upgraded!")
+        if ParametersManager().remove_old:
+            container.removeContainerOnly()
+            # If the previous image is outdated, it can be removed once no container uses it anymore
+            if container.image.isLocked() and UserConfig().auto_remove_images:
+                DockerUtils().removeImage(container.image, upgrade_mode=True)
+        else:
+            logger.info(f"The previous container is kept as [orange3]{backup_name.replace('mandalore-', '', 1)}[/orange3], "
+                        f"remove it with: [green]mandalore remove {backup_name.replace('mandalore-', '', 1)}[/green] (its workspace is not deleted)")
+        if not was_running:
+            new_container.stop(timeout=5)
+
+    @classmethod
     def print_version(cls) -> None:
         """Show mandalore version (and context configuration on debug mode)"""
 
@@ -244,6 +355,11 @@ class MandaloreManager:
             return cls.__image
         image_tag = override_image if override_image is not None else ParametersManager().imagetag
         image_tags = ParametersManager().multiimagetag
+        if multiple and ParametersManager().all_images:
+            cls.__image = DockerUtils().listInstalledImages()
+            if len(cls.__image) == 0:
+                logger.error("No Mandalore image is installed.")
+            return cls.__image
         image_selection: Union[Optional[MandaloreImage], List[MandaloreImage]] = None
         # While an image have not been selected
         while image_selection is None:
@@ -360,6 +476,11 @@ class MandaloreManager:
             return cls.__container
         container_tag: Optional[str] = override_container if override_container is not None else ParametersManager().containertag
         container_tags: Optional[List[str]] = None
+        if multiple and ParametersManager().all_containers:
+            cls.__container = DockerUtils().listContainers()
+            if len(cls.__container) == 0:
+                logger.error("No Mandalore container exists.")
+            return cls.__container
         if ParametersManager().multicontainertag:
             container_tags = []
             for tag in ParametersManager().multicontainertag:

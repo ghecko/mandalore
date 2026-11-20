@@ -1,5 +1,7 @@
 import os
+import shlex
 import shutil
+import signal
 import subprocess
 import tempfile
 from datetime import datetime
@@ -8,7 +10,10 @@ from typing import Optional, Dict, Sequence, Tuple, Union
 from docker.errors import NotFound, ImageNotFound, APIError
 from docker.models.containers import Container
 
+from requests import ReadTimeout
+
 from mandalore.config.EnvInfo import EnvInfo
+from mandalore.console.ConsoleFormat import formatSize
 from mandalore.console.MandalorePrompt import Confirm
 from mandalore.console.cli.ParametersManager import ParametersManager
 from mandalore.model.ContainerConfig import ContainerConfig
@@ -29,6 +34,7 @@ class MandaloreContainer(MandaloreContainerTemplate, SelectableInterface):
         self.__container: Container = docker_container
         self.__id: str = docker_container.id
         self.__xhost_applied = False
+        self.__disk_usage: Optional[int] = None
         if model is None:
             image_name = ""
             try:
@@ -181,16 +187,24 @@ class MandaloreContainer(MandaloreContainerTemplate, SelectableInterface):
         # In case of multi-user environment, xhost must be set before opening each session to be sure
         self.__applyX11ACLs()
         # Using system command to attach the shell to the user terminal (stdin / stdout / stderr)
-        envs = self.config.getShellEnvs()
-        options = ""
-        if len(envs) > 0:
-            options += f" -e {' -e '.join(envs)}"
-        cmd = f"docker exec{options} -ti {self.getFullId()} {self.config.getShellCommand()}"
-        logger.debug(f"Opening shell with: {cmd}")
+        # The command is passed as an argument list (no host shell involved):
+        # environment values containing spaces, quotes or shell metacharacters are transmitted as-is.
+        cmd = ["docker", "exec"]
+        for env in self.config.getShellEnvs():
+            cmd += ["-e", env]
+        cmd += ["-ti", self.getFullId(), self.config.getShellCommand()]
+        logger.debug(f"Opening shell with: {shlex.join(cmd)}")
         if EnvInfo.isDockerDesktop() and (EnvInfo.is_windows_shell or EnvInfo.is_mac_shell):
             # Disable "What's next?" Docker Desktop spam exit message
             os.environ['DOCKER_CLI_HINTS'] = "false"
-        os.system(cmd)
+        # Like os.system, ignore SIGINT in the wrapper while the interactive shell is attached
+        previous_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
+        try:
+            subprocess.call(cmd)
+        except FileNotFoundError:
+            logger.critical("The 'docker' command-line client was not found in your PATH, it is required to open a shell.")
+        finally:
+            signal.signal(signal.SIGINT, previous_handler)
         # Docker SDK doesn't support (yet) stdin properly
         # result = self.__container.exec_run(ParametersManager().shell, stdout=True, stderr=True, stdin=True, tty=True,
         #                                    environment=self.config.getShellEnvs())
@@ -244,6 +258,41 @@ class MandaloreContainer(MandaloreContainerTemplate, SelectableInterface):
             # For direct execution, the full command must be supplied not just the zsh argument
             cmd = f"zsh -c '{cmd}'"
         return cmd, str_cmd
+
+    def getDiskUsage(self) -> Optional[int]:
+        """Size (in bytes) of the data written in the container filesystem (writable layer, excluding volumes).
+        This computation can be slow, the result is cached."""
+        if self.__disk_usage is None:
+            try:
+                result = self.__container.client.api.containers(all=True, size=True, filters={"id": self.__id})
+                if result:
+                    self.__disk_usage = int(result[0].get("SizeRw") or 0)
+            except (APIError, ReadTimeout) as e:
+                logger.debug(f"Unable to compute the container size: {e}")
+        return self.__disk_usage
+
+    def getTextDiskUsage(self) -> str:
+        size = self.getDiskUsage()
+        return "[bright_black]N/A[/bright_black]" if size is None else formatSize(size)
+
+    def getDockerObject(self) -> Container:
+        """Docker SDK container object getter"""
+        return self.__container
+
+    def rename(self, new_container_name: str) -> None:
+        """Rename the docker container (full docker name, e.g. mandalore-demo)"""
+        logger.debug(f"Renaming container {self.__container.name} to {new_container_name}")
+        self.__container.rename(new_container_name)
+        self.__container.reload()
+
+    def removeContainerOnly(self) -> None:
+        """Stop and remove the docker container WITHOUT removing its workspace (used by the upgrade process)"""
+        self.stop(timeout=2)
+        try:
+            self.__container.remove()
+            logger.success(f"Container {self.__container.name} successfully removed.")
+        except NotFound:
+            logger.debug(f"The container {self.__container.name} has already been removed.")
 
     def remove(self) -> None:
         """Stop and remove the docker container"""

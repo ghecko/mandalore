@@ -1,4 +1,4 @@
-from mandalore.console.cli.MandaloreCompleter import HybridContainerImageCompleter, VoidCompleter, BuildProfileCompleter
+from mandalore.console.cli.MandaloreCompleter import HybridContainerImageCompleter, VoidCompleter, BuildProfileCompleter, ImageCompleter
 from mandalore.console.cli.actions.Command import Command, Option, GroupArg
 from mandalore.console.cli.actions.GenericParameters import ContainerCreation, ContainerSpawnShell, ContainerMultiSelector, ContainerSelector, ImageSelector, ImageMultiSelector, ContainerStart
 from mandalore.manager.MandaloreManager import MandaloreManager
@@ -140,6 +140,46 @@ class Update(Command, ImageSelector):
         return MandaloreManager.update
 
 
+class Upgrade(Command, ContainerMultiSelector):
+    """Upgrade Mandalore [default not bold]container(s)[/default not bold] to the latest installed image"""
+
+    def __init__(self) -> None:
+        Command.__init__(self)
+        ContainerMultiSelector.__init__(self, self.groupArgs)
+
+        self.force_mode = Option("-F", "--force",
+                                 dest="force_mode",
+                                 action="store_true",
+                                 help="Upgrade container without interactive user confirmation (the image is not updated from the registry).")
+        self.upgrade_image = Option("--image",
+                                    dest="upgrade_image",
+                                    action="store",
+                                    metavar="IMAGE",
+                                    help="Upgrade the container to another installed Mandalore image (default: the container's current image name).",
+                                    completer=ImageCompleter)
+        self.remove_old = Option("--remove-old",
+                                 dest="remove_old",
+                                 action="store_true",
+                                 help="Remove the previous container after a successful upgrade instead of keeping it renamed "
+                                      "(the workspace is never deleted).")
+
+        self.groupArgs.append(GroupArg({"arg": self.force_mode, "required": False},
+                                       {"arg": self.upgrade_image, "required": False},
+                                       {"arg": self.remove_old, "required": False},
+                                       title="[bold cyan]Upgrade[/bold cyan] [blue]specific options[/blue]"))
+
+        self._usages = {
+            "Upgrade interactively one or more containers": "mandalore upgrade",
+            "Upgrade the [blue]demo[/blue] container": "mandalore upgrade [blue]demo[/blue]",
+            "Upgrade every container and remove the previous ones": "mandalore upgrade --all --remove-old",
+            "Move the [blue]demo[/blue] container to the [bright_blue]light[/bright_blue] image": "mandalore upgrade [blue]demo[/blue] --image [bright_blue]light[/bright_blue]",
+        }
+
+    def __call__(self, *args, **kwargs):
+        logger.debug("Running upgrade module")
+        return MandaloreManager.upgrade
+
+
 class Uninstall(Command, ImageMultiSelector):
     """Remove Mandalore [default not bold]image(s)[/default not bold]"""
 
@@ -158,7 +198,8 @@ class Uninstall(Command, ImageMultiSelector):
 
         self._usages = {
             "Uninstall interactively one or more mandalore images": "mandalore uninstall",
-            "Uninstall the [bright_blue]dev[/bright_blue] image": "mandalore uninstall [bright_blue]dev[/bright_blue]"
+            "Uninstall the [bright_blue]dev[/bright_blue] image": "mandalore uninstall [bright_blue]dev[/bright_blue]",
+            "Uninstall every installed image": "mandalore uninstall --all"
         }
 
     def __call__(self, *args, **kwargs):
@@ -184,7 +225,8 @@ class Remove(Command, ContainerMultiSelector):
 
         self._usages = {
             "Remove interactively one or more containers": "mandalore remove",
-            "Remove the [blue]demo[/blue] container": "mandalore remove [blue]demo[/blue]"
+            "Remove the [blue]demo[/blue] container": "mandalore remove [blue]demo[/blue]",
+            "Remove every container": "mandalore remove --all"
         }
 
     def __call__(self, *args, **kwargs):
