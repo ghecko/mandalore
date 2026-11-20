@@ -1,15 +1,23 @@
 import argparse
+import sys
 from logging import CRITICAL
 from typing import Optional, List, Union, Dict, cast
 
 import argcomplete
 
+from mandalore.config.ConstantConfig import ConstantConfig
 from mandalore.console.cli.actions.Command import Command, Option
 from mandalore.utils.ExeLog import logger
 
 
 class MandaloreArgParse(argparse.ArgumentParser):
     """Overloading of the main parsing (argparse.ArgumentParser) class"""
+
+    def __init__(self, *args, **kwargs) -> None:
+        # Python 3.14+ colorizes argparse output with ANSI codes, which conflicts with the rich formatting of the messages
+        if sys.version_info >= (3, 14):
+            kwargs["color"] = False
+        super().__init__(*args, **kwargs)
 
     # Using Exelog to print built-in parser message
     def _print_message(self, message: str, file=None) -> None:
@@ -20,9 +28,9 @@ class MandaloreArgParse(argparse.ArgumentParser):
 class Parser:
     """Custom Mandalore CLI Parser. Main controller of argument building and parsing."""
 
-    __description = """This Python script is a wrapper for Mandalore. It can be used to easily manage Mandalore on your machine.
+    __description = f"""This Python script is a wrapper for Mandalore. It can be used to easily manage Mandalore on your machine.
 
-[bold magenta]Mandalore documentation:[/bold magenta] [underline magenta]https://mandalore.rtfd.io[/underline magenta]"""
+[bold magenta]Mandalore documentation:[/bold magenta] [underline magenta]{ConstantConfig.documentation}[/underline magenta]"""
     __formatter_class = argparse.RawTextHelpFormatter
 
     def __init__(self, actions: List[Command]):
@@ -59,7 +67,7 @@ class Parser:
                 action.__doc__ = "Unknown action"
             sub_parser = self.subParser.add_parser(action.name, help=action.__doc__,
                                                    description=action.__doc__ + f"""\n
-[bold magenta]Mandalore documentation:[/bold magenta] [underline magenta]https://github.com/ghecko/mandalore[/underline magenta]""",
+[bold magenta]Mandalore documentation:[/bold magenta] [underline magenta]{ConstantConfig.documentation}[/underline magenta]""",
                                                    epilog=action.formatEpilog(),
                                                    formatter_class=self.__formatter_class)
             sub_parser.set_defaults(action=action)
