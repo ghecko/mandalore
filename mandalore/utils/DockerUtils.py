@@ -486,6 +486,9 @@ class DockerUtils(metaclass=MetaSingleton):
             if tag.startswith("sha256-"):
                 # Signatures / attestations stored as tags
                 continue
+            if tag.startswith("staging-"):
+                # Per-arch images waiting to be assembled into a multi-arch image (see mandalore-images/publish.sh)
+                continue
             if MetaImages.tagNameParsing(tag):
                 versions.setdefault(tag.split('-')[0], []).append(tag)
             else:
